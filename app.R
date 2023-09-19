@@ -1,36 +1,56 @@
-# Load necessary libraries
+# Instala y carga los paquetes necesarios
+if (!require("shiny")) install.packages("shiny")
+if (!require("readr")) install.packages("readr")
+if (!require("leaflet")) install.packages("leaflet")
 library(shiny)
-library(ggplot2)
+library(readr)
+library(leaflet)
 
-# Define user interface
+# Carga el conjunto de datos
+source("GasStation_dataset_load.R")
+
+# Define la interfaz de usuario
 ui <- fluidPage(
-  titlePanel("Pollutant Evolution"),
-  sidebarLayout(
-    sidebarPanel(
-      checkboxGroupInput("pollutant", "Select pollutants:", choices = unique(plotable_dataset$pollutant))
-    ),
-    mainPanel(
-      plotOutput("linePlot")
-    )
-  )
+  titlePanel("Mapa de gasolineras en España"),
+  selectInput("carburante", "Selecciona un tipo de carburante:", 
+              choices = c("Precio gasolina 95 E5", "Precio gasolina 98 E5", "Precio gasóleo A", "Precio gasóleo Premium")),
+  leafletOutput("map", height = "84vh") # Establece la altura al 100% de la altura de la ventana
 )
 
-# Define server
 server <- function(input, output) {
-  output$linePlot <- renderPlot({
-    # Filter data for selected pollutants and exclude rows with NaN values
-    filtered_data <- plotable_dataset[plotable_dataset$pollutant %in% input$pollutant & !is.na(plotable_dataset$value),]
+  output$map <- renderLeaflet({
+    # Crea un mapa centrado en España
+    m <- leaflet() %>%
+      setView(lng = -6.94922, lat = 36.463667, zoom = 5.3) %>%
+      addProviderTiles(providers$OpenStreetMap)
     
-    # Calculate min and max year
-    min_year <- min(filtered_data$year)
-    max_year <- max(filtered_data$year)
+    # Genera una paleta de colores basada en la elección del usuario
+    pal <- colorNumeric(palette = "RdYlGn", domain = data[[input$carburante]][data[[input$carburante]] > 0], reverse = TRUE)
     
-    # Create line plot
-    ggplot(filtered_data, aes(x = year, y = value, color = pollutant)) +
-      geom_line() +
-      labs(x = "Year", y = "Value", title = paste("Evolution of pollutants from", min_year, "to", max_year))
+    # Añade marcadores para cada gasolinera
+    m <- addCircleMarkers(
+      map = m,
+      data = data,
+      lng = ~Longitud, lat = ~Latitud,
+      color = pal(data[[input$carburante]]), # Usa la paleta de colores para los marcadores
+      popup = ~paste0("<strong>Dirección:</strong> ", Dirección, "<br>",
+                      "<strong>Horario:</strong> ", Horario, "<br>",
+                      "<strong>",input$carburante,":</strong> ", data[[input$carburante]], "<br>",
+                      "<strong>Fecha últ.Actualización;</strong> ", `Toma de datos`)
+    )
+    # Genera una paleta de colores basada en la elección del usuario
+    data_no_na <- data[[input$carburante]][!is.na(data[[input$carburante]]) & data[[input$carburante]] > 0]
+    pal_no_NA <- colorNumeric(palette = "RdYlGn", domain = data_no_na, reverse = TRUE)
+    
+    # Añade la leyenda al mapa
+    m <- addLegend(map = m, pal = pal_no_NA, values = data_no_na, title = "Precios de carburante", opacity = 1)
+    
+    # Añade una segunda leyenda para los valores NA
+    m <- addLegend(map = m, colors = "grey", labels = "NA", title = "Valores no disponibles", opacity = 1, position = "bottomright")
+    
+    return(m)
   })
 }
 
-# Run the application
+# Ejecuta la aplicación
 shinyApp(ui = ui, server = server)
