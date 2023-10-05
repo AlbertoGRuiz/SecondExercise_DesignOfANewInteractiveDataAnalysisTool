@@ -33,6 +33,7 @@ datos[,grep("Precio", names(datos), value = TRUE)] <- lapply(datos[,grep("Precio
 
 
 
+
 # Escribe el archivo CSV
 write_csv(datos, "preciosEESS_es.csv")
 
