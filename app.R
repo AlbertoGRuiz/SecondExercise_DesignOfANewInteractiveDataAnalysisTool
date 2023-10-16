@@ -18,16 +18,23 @@ source("GasStation_dataset_load.R")
 # Define la interfaz de usuario
 ui <- fluidPage(
   titlePanel("Mapa de precios medios de gasolineras en España por provincia"),
-  selectInput("carburante", "Selecciona un tipo de carburante:", 
-              choices = c("Precio gasolina 95 E5", "Precio gasolina 98 E5", "Precio gasóleo A", "Precio gasóleo Premium")),
-  leafletOutput("map", height = "84vh") # Establece la altura al 100% de la altura de la ventana
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("carburante", "Selecciona un tipo de carburante:", 
+                  choices = c("Precio gasolina 95 E5", "Precio gasolina 98 E5", "Precio gasóleo A", "Precio gasóleo Premium"))
+    ),
+    mainPanel(
+      leafletOutput("map", height = "93vh") # Establece la altura al 100% de la altura de la ventana
+    )
+  )
 )
+
 
 server <- function(input, output) {
   output$map <- renderLeaflet({
     # Crea un mapa centrado en España
     m <- leaflet() %>%
-      setView(lng = -6.94922, lat = 36.463667, zoom = 5.3) %>%
+      setView(lng = -3.70256, lat = 40.4165, zoom = 6) %>%
       addProviderTiles(providers$OpenStreetMap)
     
     # Calcula la media del precio del carburante por provincia
@@ -75,8 +82,8 @@ server <- function(input, output) {
         dashArray = "",
         fillOpacity = 0.7,
         bringToFront = TRUE),
-      label = ~paste0("<strong>Provincia:</strong> ", ine.prov.name, "<br>",
-                      "<strong>Precio medio ",input$carburante,":</strong> ", round(medium_cost, 3))
+      label = ~paste0("Provincia: ", ine.prov.name, " | ",
+                      "Precio medio ",input$carburante,": ", round(medium_cost, 3))
     )
     
     # Genera una paleta de colores basada en las medias calculadas
@@ -84,7 +91,6 @@ server <- function(input, output) {
     
     # Añade la leyenda al mapa
     m <- addLegend(map = m, pal = pal_no_NA, values = provincias$medium_cost[!is.na(provincias$medium_cost)], title = "Precios medios de carburante", opacity = 1)
-    
     return(m)
   })
 }
