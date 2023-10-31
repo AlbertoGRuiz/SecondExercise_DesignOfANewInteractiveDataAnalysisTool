@@ -40,9 +40,9 @@ server <- function(input, output) {
     # Calcula la media del precio del carburante por provincia
     data_by_province  <- aggregate(data[[input$carburante]], by = list(ine.prov.name = data$Provincia), FUN = mean, na.rm = TRUE)
     data_by_province <- rename(data_by_province, medium_cost = x )
+    
     # Homogeneiza los nombres de las provincias
     data_by_province$ine.prov.name <- tools::toTitleCase(tolower(data_by_province$ine.prov.name))
-    # Elimina los paréntesis
     data_by_province$ine.prov.name <- gsub(" \\(", ", ", data_by_province$ine.prov.name)
     data_by_province$ine.prov.name <- gsub("\\)", "", data_by_province$ine.prov.name)
 
@@ -61,19 +61,29 @@ server <- function(input, output) {
       }
     }
     
+    #Unifica los valores de las coordenadas del mapa y el precio medio por provincia usando la columna nombre de provincia
     provincias <- dplyr::left_join(provincias, data_by_province, by = "ine.prov.name")
     
-    # Genera una paleta de colores basada en las medias calculadas
-    pal <- colorNumeric(palette = "RdYlGn", domain = provincias$x, reverse = TRUE)
+    # Crea una nueva variable categórica
+    rango <- range(provincias$medium_cost, na.rm = TRUE)
     
+    # Cuenta el número de caracteres en la parte decimal
+    dec <- (1/10^nchar((strsplit(as.character(rango[1]), split = "\\.")[[1]])[2]))
+    bins <- seq(from = rango[1]-dec, to = rango[2]+dec, length.out = 6)
+    provincias$cost_category <- cut(provincias$medium_cost, breaks = bins, labels = c("Bajo", "Medio-Bajo", "Medio", "Medio-Alto", "Alto"))
+    provincias$legend <- cut(provincias$medium_cost, breaks = bins, labels = rev(c("Bajo", "Medio-Bajo", "Medio", "Medio-Alto", "Alto")))
+    
+    # Define la paleta de colores
+    pal <- colorFactor(palette = c("green", "red"), domain = provincias$cost_category)
+
     # Añade polígonos para cada provincia
     m <- addPolygons(
       map = m,
       data = provincias,
-      fillColor = ~pal(medium_cost), # Usa la paleta de colores para los polígonos
+      fillColor = ~pal(cost_category), # Usa la paleta de colores para los polígonos
       weight = 2,
       opacity = 1,
-      color = "white",
+      color = "black",
       dashArray = "3",
       fillOpacity = 0.7,
       highlightOptions = highlightOptions(
@@ -85,12 +95,10 @@ server <- function(input, output) {
       label = ~paste0("Provincia: ", ine.prov.name, " | ",
                       "Precio medio ",input$carburante,": ", round(medium_cost, 3))
     )
-    
-    # Genera una paleta de colores basada en las medias calculadas
-    pal_no_NA <- colorNumeric(palette = "RdYlGn", domain = provincias$medium_cost[!is.na(provincias$medium_cost)], reverse = TRUE)
-    
-    # Añade la leyenda al mapa
-    m <- addLegend(map = m, pal = pal_no_NA, values = provincias$medium_cost[!is.na(provincias$medium_cost)], title = "Precios medios de carburante", opacity = 1)
+
+    # Añade la leyenda al mapa con etiquetas personalizadas
+    m <- addLegend(map = m, pal = colorFactor(palette = c("red", "green"), domain = provincias$legend), values = (provincias$legend), 
+                  title = "Precios medios de carburante", opacity = 1)
     return(m)
   })
 }
