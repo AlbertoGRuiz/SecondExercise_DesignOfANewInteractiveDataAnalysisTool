@@ -65,16 +65,24 @@ server <- function(input, output) {
     provincias <- dplyr::left_join(provincias, data_by_province, by = "ine.prov.name")
     
     # Crea una nueva variable categórica
-    rango <- range(provincias$medium_cost, na.rm = TRUE)
+    mean_value <- mean(provincias$medium_cost, na.rm = TRUE)
+    min_value <- min(provincias$medium_cost, na.rm = TRUE)
+    print(mean_value) #low               #Mean-low         #Mean-high         #high            #ext-high
+    breaks <- c(-Inf, mean_value-0.050*2,mean_value-0.015, mean_value, mean_value+0.015, mean_value+0.050*2, Inf)
     
-    # Cuenta el número de caracteres en la parte decimal
-    dec <- (1/10^nchar((strsplit(as.character(rango[1]), split = "\\.")[[1]])[2]))
-    bins <- seq(from = rango[1]-dec, to = rango[2]+dec, length.out = 6)
-    provincias$cost_category <- cut(provincias$medium_cost, breaks = bins, labels = c("Bajo", "Medio-Bajo", "Medio", "Medio-Alto", "Alto"))
-    provincias$legend <- cut(provincias$medium_cost, breaks = bins, labels = rev(c("Bajo", "Medio-Bajo", "Medio", "Medio-Alto", "Alto")))
+    labels <- c("Bajo-➤Extremadamente",
+                "Bajo-➤Intermedio", 
+                "Bajo-➤Medio",
+                "Alto-➤Medio",
+                "Alto-➤Intermedio",
+                "Alto-➤Extremadamente")
+    # Asigna las etiquetas a la variable cost_category
+    provincias$cost_category <- cut(provincias$medium_cost, breaks = breaks, labels = labels, include.lowest = TRUE, include.highest = TRUE)
+    provincias$legend <- cut(provincias$medium_cost, breaks = breaks, labels = rev(labels), include.lowest = TRUE, include.highest = TRUE)
+    
     
     # Define la paleta de colores
-    pal <- colorFactor(palette = c("green", "red"), domain = provincias$cost_category)
+    pal <- colorFactor(palette = c("#1a9850","#91cf60","#d9ef8b", "#fee08b", "#fc8d59", "#d73027"), domain = provincias$cost_category)
 
     # Añade polígonos para cada provincia
     m <- addPolygons(
@@ -93,12 +101,12 @@ server <- function(input, output) {
         fillOpacity = 0.7,
         bringToFront = TRUE),
       label = ~paste0("Provincia: ", ine.prov.name, " | ",
-                      "Precio medio ",input$carburante,": ", round(medium_cost, 3))
+                      "Precio medio ",sub("Precio","",input$carburante),": ", round(medium_cost, 3))
     )
 
     # Añade la leyenda al mapa con etiquetas personalizadas
-    m <- addLegend(map = m, pal = colorFactor(palette = c("red", "green"), domain = provincias$legend), values = (provincias$legend), 
-                  title = "Precios medios de carburante", opacity = 1)
+    m <- addLegend(map = m, pal = pal, values = (provincias[!is.na(provincias$legend),]$legend), 
+                  title = paste0("Precio medio de ",sub("Precio","",input$carburante)), opacity = 1)
     return(m)
   })
 }
