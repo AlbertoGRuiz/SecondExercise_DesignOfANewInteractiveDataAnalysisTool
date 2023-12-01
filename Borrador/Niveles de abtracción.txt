@@ -1,7 +1,0 @@
-Caracterización del problema en el dominio de la aplicación: ueremos analizar los precios del combustible en las gasolineras de toda España. Algunas preguntas que prodrían querer responderse son: ¿Dónde están ubicadas las gaolineras? ¿Cuáles son las gasolineras más cercanas a una ubicación específica?, ¿Cuáles son las gasolineras más baratas?.
-
-Abstracción de datos y tareas: Los datos son las características de cada gasolinera, incluyendo su ubicación y los precios del combustible. Las tareas son las preguntas que queremos responder, como identificar la gasolinera más barata en una región o comparar los precios del combustible entre regiones.
-
-Diseño: Podríamos usar un mapa para visualizar la ubicación de cada gasolinera. Las gasolineras podrían representarse como puntos en el mapa, con el color del punto indicando el precio del combustible (por ejemplo, rojo para precios altos y verde para precios bajos). También podríamos incluir interacciones como hacer clic en un punto para obtener más información sobre esa gasolinera. En otra pestaña se puede incluir una tabla con los datos de cada gasolinera, según cercanía a un lugar u ordenadas por menor coste de combustible.
-
-Implementación: Implementaríamos nuestro diseño en Shiny, utilizando su funcionalidad para crear mapas interactivos y otras visualizaciones.

@@ -20,7 +20,7 @@ library(readr)
 
 
 # Lee el archivo XLS
-datos <- read_excel("preciosEESS_es.xls", skip = 3)
+datos <- read_excel("Excel_Log/preciosEESS_es.xls", skip = 3)
 datos$Longitud <- gsub(",", ".", datos$Longitud)
 datos$Latitud <- gsub(",", ".", datos$Latitud)
 
@@ -32,9 +32,9 @@ datos[,grep("Precio", names(datos), value = TRUE)] <- lapply(datos[,grep("Precio
 
 
 # Escribe el archivo CSV
-write_csv(datos, "preciosEESS_es.csv")
+write_csv(datos, "CSV_Log/preciosEESS_es.csv")
 rm(datos)
-data <- read_csv("preciosEESS_es.csv")
+data <- read_csv("CSV_Log/preciosEESS_es.csv")
 
   
 
