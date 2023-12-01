@@ -15,16 +15,27 @@ library(dplyr)
 # Carga el conjunto de datos
 source("GasStation_dataset_load.R")
 
+translateFuelType <- function(fuelTypeInSpanish) {
+  switch(fuelTypeInSpanish,
+         "Precio gasolina 95 E5" = "Gasoline 95 E5",
+         "Precio gasolina 98 E5" = "Gasoline 98 E5",
+         "Precio gasóleo A" = "Diesel A",
+         "Precio gasóleo Premium" = "Premium Diesel")
+}
+
 # Define la interfaz de usuario
 ui <- fluidPage(
-  titlePanel("Mapa de precios medios de gasolineras en España por provincia"),
+  titlePanel("Map of average gas station prices in Spain by province"),
   sidebarLayout(
     sidebarPanel(
-      selectInput("carburante", "Selecciona un tipo de carburante:", 
-                  choices = c("Precio gasolina 95 E5", "Precio gasolina 98 E5", "Precio gasóleo A", "Precio gasóleo Premium"))
+      selectInput("carburante", "Select fuel type:", 
+                  choices = c("Gasoline 95 E5" = "Precio gasolina 95 E5", 
+                              "Gasoline 98 E5" = "Precio gasolina 98 E5", 
+                              "Diesel A" = "Precio gasóleo A", 
+                              "Premium Diesel" = "Precio gasóleo Premium"))
     ),
     mainPanel(
-      leafletOutput("map", height = "93vh") # Establece la altura al 100% de la altura de la ventana
+      leafletOutput("map", height = "93vh") # Establece la altura al 100% de la altura de la ventana contando el título
     )
   )
 )
@@ -70,12 +81,12 @@ server <- function(input, output) {
     print(mean_value) #low               #Mean-low         #Mean-high         #high            #ext-high
     breaks <- c(-Inf, mean_value-0.050*2,mean_value-0.015, mean_value, mean_value+0.015, mean_value+0.050*2, Inf)
     
-    labels <- c("Bajo-➤Extremadamente",
-                "Bajo-➤Intermedio", 
-                "Bajo-➤Medio",
-                "Alto-➤Medio",
-                "Alto-➤Intermedio",
-                "Alto-➤Extremadamente")
+    labels <- c("Low-➤Extrene",
+                "Low-➤Intermediate", 
+                "Low-➤Medium",
+                "High-➤Medium",
+                "High-➤Intermediate",
+                "High-➤Extreme")
     # Asigna las etiquetas a la variable cost_category
     provincias$cost_category <- cut(provincias$medium_cost, breaks = breaks, labels = labels, include.lowest = TRUE, include.highest = TRUE)
     provincias$legend <- cut(provincias$medium_cost, breaks = breaks, labels = rev(labels), include.lowest = TRUE, include.highest = TRUE)
@@ -100,13 +111,13 @@ server <- function(input, output) {
         dashArray = "",
         fillOpacity = 0.7,
         bringToFront = TRUE),
-      label = ~paste0("Provincia: ", ine.prov.name, " | ",
-                      "Precio medio ",sub("Precio","",input$carburante),": ", round(medium_cost, 3))
+      label = ~paste0("Province: ", ine.prov.name, " | ",
+                      "Average price value -",translateFuelType(input$carburante),"- : ", round(medium_cost, 3))
     )
 
     # Añade la leyenda al mapa con etiquetas personalizadas
     m <- addLegend(map = m, pal = pal, values = (provincias[!is.na(provincias$legend),]$legend), 
-                  title = paste0("Precio medio de ",sub("Precio","",input$carburante)), opacity = 1)
+                  title = paste0("Average price category -",translateFuelType(input$carburante),"-"), opacity = 1)
     return(m)
   })
 }
