@@ -5,7 +5,7 @@ if (!require("leaflet")) install.packages("leaflet")
 if (!require("mapSpain")) install.packages("mapSpain", dependencies = TRUE)
 if (!require("stringdist")) install.packages("stringdist")
 if (!require("dplyr")) install.packages("dplyr")
-if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("plotly")) install.packages("plotly")
 
 library(shiny)
 library(readr)
@@ -13,19 +13,19 @@ library(leaflet)
 library(mapSpain)
 library(stringdist)
 library(dplyr)
-library(ggplot2)
+library(plotly)
 
 # Carga el conjunto de datos
 source("GasStation_dataset_load.R")
-data$LocationType <- ifelse(grepl("AUTOPISTA|AUTOVIA", data$Dirección), "Autovía", "Urbano")
-data_autovia <- data %>% filter(LocationType == "Autovía")
+data$Location_Type <- ifelse(grepl("AUTOPISTA|AUTOVIA", data$Dirección), "Autovía", "Urbano")
+data_autovia <- data %>% filter(Location_Type == "Autovía")
 mean_95_E5_auto <- mean(data_autovia$`Precio gasolina 95 E5`, na.rm = TRUE)
 mean_98_E5_auto <- mean(data_autovia$`Precio gasolina 98 E5`, na.rm = TRUE)
 mean_gasoleo_A_auto <- mean(data_autovia$`Precio gasóleo A`, na.rm = TRUE)
 mean_gasoleo_Premium_auto <- mean(data_autovia$`Precio gasóleo Premium`, na.rm = TRUE)
 rm(data_autovia)
 
-data_urbano <- data %>% filter(LocationType == "Urbano")
+data_urbano <- data %>% filter(Location_Type == "Urbano")
 mean_95_E5_urban <- mean(data_urbano$`Precio gasolina 95 E5`, na.rm = TRUE)
 mean_98_E5_urban <- mean(data_urbano$`Precio gasolina 98 E5`, na.rm = TRUE)
 mean_gasoleo_A_urban <- mean(data_urbano$`Precio gasóleo A`, na.rm = TRUE)
@@ -37,13 +37,21 @@ max <- round(max,2)
 
 # Define la interfaz de usuario
 ui <- fluidPage(
-  titlePanel("Price Highway vs Urban"),
+  titlePanel("Price per road type"),
   sidebarLayout(
     sidebarPanel(
       sliderInput("yrange", "Price range:", min = 0, max = max, value = c(0,max))
     ),
     mainPanel(
-      plotOutput("barChart", height = "848")
+      tags$head(
+        tags$style(
+          "#barChart {
+            border-radius: 15px;
+            height: 80vh;
+          }"
+        )
+      ),
+      plotlyOutput("barChart")
     )
   )
 )
@@ -52,17 +60,17 @@ ui <- fluidPage(
 server <- function(input, output) {
   # Crea un data frame con las medias calculadas
   data_summary <- data.frame(
-    LocationType = rep(c("Highway", "Urban"), each = 4),
-    FuelType = rep(c("95 E5", "98 E5", "Gasóleo A", "Gasóleo Premium"), 2),
-    MeanPrice = c(mean_95_E5_auto, mean_98_E5_auto, mean_gasoleo_A_auto, mean_gasoleo_Premium_auto, 
+    Location_Type = rep(c("Highway", "Urban"), each = 4),
+    Fuel_Type = rep(c("Gasoline 95 E5", "Gasoline 98 E5", "Diesel A", "Diesel A Premium"), 2),
+    Mean_Price = c(mean_95_E5_auto, mean_98_E5_auto, mean_gasoleo_A_auto, mean_gasoleo_Premium_auto, 
                   mean_95_E5_urban, mean_98_E5_urban, mean_gasoleo_A_urban, mean_gasoleo_Premium_urban)
   )
   
   # Crea el gráfico de barras agrupado
-  output$barChart <- renderPlot({
-    ggplot(data_summary, aes(x = LocationType , y = MeanPrice, fill = FuelType)) +
+  output$barChart <- renderPlotly({
+    ggplot(data_summary, aes(x = Location_Type , y = Mean_Price, fill = Fuel_Type)) +
       geom_bar(stat = "identity", position = "dodge") +
-      theme_minimal() +
+      theme_minimal(base_size  = 16) +
       labs(x = "Location Type", y = "Mean Price", fill = "Fuel Type") +
       coord_cartesian(ylim = input$yrange)
   })
@@ -70,3 +78,5 @@ server <- function(input, output) {
 
 # Crea la aplicación Shiny
 shinyApp(ui = ui, server = server)
+
+app2 <- list(ui=ui,server=server)
