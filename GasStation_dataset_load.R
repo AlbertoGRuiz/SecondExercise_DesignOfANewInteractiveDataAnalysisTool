@@ -1,40 +1,35 @@
-# if (!require("readr")) install.packages("readr")
-# library(readr)
-# # Read the first file as a reference for the columns
-# data <- read_csv("Gasolineras_de_EspaB1a.csv")
-# 
-# # Modifica el objeto data
-# data$Precio_gas <- apply(data[,grep("Precio_g_", names(data))], 1, function(x) {
-#   if(all(is.na(x) | x == 0)) {
-#     return(0)
-#   } else {
-#     return(x[!is.na(x) & x > 0 & x < 5][1])
-#   }
-# })
-
-# Carga las bibliotecas necesarias
 if (!require("readxl")) install.packages("readxl")
-if (!require("readr")) install.packages("readr")
+if (!require("writexl")) install.packages("writexl")
 library(readxl)
-library(readr)
+library(writexl)
 
+# Obtiene una lista de todos los archivos en la carpeta "Excel_Log" que tienen el prefijo "preciosEESS_es.xls"
+archivos <- list.files(path = "./Excel_Log", pattern = "^preciosEESS_es", full.names = TRUE)
 
-# Lee el archivo XLS
-datos <- read_excel("Excel_Log/preciosEESS_es.xls", skip = 3)
-datos$Longitud <- gsub(",", ".", datos$Longitud)
-datos$Latitud <- gsub(",", ".", datos$Latitud)
-
-# Reemplazar las comas por puntos en estas columnas
-datos[,grep("Precio", names(datos), value = TRUE)] <- lapply(datos[,grep("Precio", names(datos), value = TRUE)], function(x){
-  gsub(",", ".", x)
-})
-
-
-
-# Escribe el archivo CSV
-write_csv(datos, "CSV_Log/preciosEESS_es.csv")
-rm(datos)
+# Itera sobre la lista de archivos
+for (archivo in archivos) {
+  # Lee el archivo
+  datos <- read_excel(archivo, skip=3)
+  
+  # Aplica las transformaciones a los datos
+  datos$Longitud <- gsub(",", ".", datos$Longitud)
+  datos$Latitud <- gsub(",", ".", datos$Latitud)
+  
+  
+  datos[,grep("Precio", names(datos), value = TRUE)] <- lapply(datos[,grep("Precio", names(datos), value = TRUE)], function(x){
+    gsub(",", ".", x)
+  })
+  
+  # Obtiene el nombre del archivo sin la extensión
+  nombre_sin_extension <- sub("\\.xls$", "", basename(archivo))
+  
+  # Escribe el data frame como un archivo CSV con el mismo nombre
+  write.csv(datos, file = paste0("./CSV_Log/", nombre_sin_extension, ".csv"), row.names = FALSE)
+  rm(datos)
+}
 data <- read_csv("CSV_Log/preciosEESS_es.csv")
+
+gas_station_data_loaded <- TRUE
 
   
 

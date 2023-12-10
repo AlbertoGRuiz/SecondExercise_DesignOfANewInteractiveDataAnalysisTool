@@ -13,7 +13,9 @@ library(stringdist)
 library(dplyr)
 
 # Carga el conjunto de datos
-source("GasStation_dataset_load.R")
+if(!exists("gas_station_data_loaded")){
+  source("GasStation_dataset_load.R")
+}
 
 translateFuelType <- function(fuelTypeInSpanish) {
   switch(fuelTypeInSpanish,

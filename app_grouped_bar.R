@@ -16,7 +16,10 @@ library(dplyr)
 library(plotly)
 
 # Carga el conjunto de datos
-source("GasStation_dataset_load.R")
+if(!exists("gas_station_data_loaded")){
+  source("GasStation_dataset_load.R")
+}
+
 data$Location_Type <- ifelse(grepl("AUTOPISTA|AUTOVIA", data$Dirección), "Autovía", "Urbano")
 data_autovia <- data %>% filter(Location_Type == "Autovía")
 mean_95_E5_auto <- mean(data_autovia$`Precio gasolina 95 E5`, na.rm = TRUE)
@@ -70,13 +73,14 @@ server <- function(input, output) {
   output$barChart <- renderPlotly({
     ggplot(data_summary, aes(x = Location_Type , y = Mean_Price, fill = Fuel_Type)) +
       geom_bar(stat = "identity", position = "dodge") +
-      theme_minimal(base_size  = 16) +
-      labs(x = "Location Type", y = "Mean Price", fill = "Fuel Type") +
-      coord_cartesian(ylim = input$yrange)
+      theme_minimal(base_size  = 12) +
+      labs(x = "Location Type", y = "Price per liter (€)", fill = "Fuel Type") +  # Cambia el título de la leyenda
+      coord_cartesian(ylim = input$yrange) +
+      theme(legend.title = element_text(face = "bold", family = "Open Sans Black"))  # Hace que el título de la leyenda sea negrita
   })
 }
 
 # Crea la aplicación Shiny
 shinyApp(ui = ui, server = server)
 
-app2 <- list(ui=ui,server=server)
+app3 <- list(ui=ui,server=server)
