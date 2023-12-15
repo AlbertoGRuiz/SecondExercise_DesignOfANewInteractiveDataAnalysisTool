@@ -50,3 +50,6 @@ server <- function(input, output) {
 
 # Ejecuta la aplicación
 shinyApp(ui = ui, server = server)
+
+
+rm("gas_station_data_loaded")

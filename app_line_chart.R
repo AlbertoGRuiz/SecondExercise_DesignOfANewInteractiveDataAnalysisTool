@@ -17,6 +17,7 @@ library(stringdist)
 library(dplyr)
 library(plotly)
 
+
 if(!exists("gas_station_data_loaded")){
   source("GasStation_dataset_load.R")
 }
@@ -28,10 +29,10 @@ ruta_del_archivo2 <- "./CSV_Log/preciosEESS_es_19_Oct.csv"
 datosOct <- read.csv(ruta_del_archivo2)
 
 ruta_del_archivo3 <- "./CSV_Log/preciosEESS_es_19_Nov.csv"
-datosNov <- read.csv(ruta_del_archivo2)
+datosNov <- read.csv(ruta_del_archivo3)
 
 ruta_del_archivo4 <- "./CSV_Log/preciosEESS_es_19_Dic.csv"
-datosDic <- read.csv(ruta_del_archivo2)
+datosDic <- read.csv(ruta_del_archivo4)
 
 
 
@@ -59,11 +60,16 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   output$end_month_ui <- renderUI({
-    start_month <- input$start_month
+    req(input$start_month)  # Asegúrate de que start_month está disponible
     months <- c("September", "October", "November", "December")
-    start_index <- match(start_month, months)
+    start_index <- match(input$start_month, months)
+    end_index <- if (!is.null(input$end_month)) match(input$end_month, months) else length(months)
     choices <- months[start_index:length(months)]
-    selectInput("end_month", "End month:", choices = choices, selected = choices[length(choices)])
+    if (start_index > end_index) {
+      selectInput("end_month", "End month:", choices = choices, selected = "December")
+    } else {
+      selectInput("end_month", "End month:", choices = choices, selected = ifelse(is.null(input$end_month), "December", input$end_month))
+    }
   })
   
   # Calcula las medias por tipo de combustible y mes para octubre
@@ -74,7 +80,7 @@ server <- function(input, output) {
     mean_gasoleo_Premium_auto <- mean(datosOct$`Precio.gasóleo.Premium`, na.rm = TRUE)
     
     data.frame(
-      Mes = factor("October", levels = c("September", "October")),
+      Mes = factor("October", levels = c("September", "October", "November", "December")),
       Combustible = c("Gasoline 95 E5", "Gasoline 98 E5", "Diesel A", "Diesel A Premium"),
       Media = c(mean_95_E5_auto, mean_98_E5_auto, mean_gasoleo_A_auto, mean_gasoleo_Premium_auto)
     )
@@ -90,7 +96,7 @@ server <- function(input, output) {
     mean_gasoleo_Premium_auto <- mean(datosSept$`Precio.gasóleo.Premium`, na.rm = TRUE)
     
     data.frame(
-      Mes = factor("September", levels = c("September", "October")),
+      Mes = factor("September", levels = c("September", "October", "November", "December")),
       Combustible = c("Gasoline 95 E5", "Gasoline 98 E5", "Diesel A", "Diesel A Premium"),
       Media = c(mean_95_E5_auto, mean_98_E5_auto, mean_gasoleo_A_auto, mean_gasoleo_Premium_auto)
     )
@@ -126,8 +132,12 @@ server <- function(input, output) {
   
   # Combina todos los data frames en uno solo
   medias_combinadas <- reactive({
+    req(input$start_month, input$end_month)  # Asegúrate de que start_month y end_month están disponibles
     datos <- list("September" = medias_por_tipo_sept(), "October" = medias_por_tipo_oct(), "November" = medias_por_tipo_nov(), "December" = medias_por_tipo_dic())
     meses <- match(c(input$start_month, input$end_month), c("September", "October", "November", "December"))
+    if (any(is.na(meses))) {
+      return(NULL)  # Devuelve NULL si start_month o end_month no son válidos
+    }
     do.call(rbind, datos[meses[1]:meses[2]])
   })
   
