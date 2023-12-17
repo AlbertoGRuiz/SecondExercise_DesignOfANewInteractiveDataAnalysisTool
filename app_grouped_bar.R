@@ -1,18 +1,8 @@
 # Instala y carga los paquetes necesarios
 if (!require("shiny")) install.packages("shiny")
-if (!require("readr")) install.packages("readr")
-if (!require("leaflet")) install.packages("leaflet")
-if (!require("mapSpain")) install.packages("mapSpain", dependencies = TRUE)
-if (!require("stringdist")) install.packages("stringdist")
-if (!require("dplyr")) install.packages("dplyr")
 if (!require("plotly")) install.packages("plotly")
 
 library(shiny)
-library(readr)
-library(leaflet)
-library(mapSpain)
-library(stringdist)
-library(dplyr)
 library(plotly)
 
 # Carga el conjunto de datos

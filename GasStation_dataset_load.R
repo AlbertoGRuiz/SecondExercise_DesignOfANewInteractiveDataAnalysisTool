@@ -1,7 +1,10 @@
+# Instala y carga los paquetes necesarios
+if (!require("readr")) install.packages("readr")
 if (!require("readxl")) install.packages("readxl")
 if (!require("writexl")) install.packages("writexl")
 library(readxl)
 library(writexl)
+library(readr)
 
 # Obtiene una lista de todos los archivos en la carpeta "Excel_Log" que tienen el prefijo "preciosEESS_es.xls"
 archivos <- list.files(path = "./Excel_Log", pattern = "^preciosEESS_es", full.names = TRUE)

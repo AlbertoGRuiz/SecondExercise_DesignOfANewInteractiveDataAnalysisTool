@@ -1,9 +1,10 @@
-# En la aplicación combinada
+# Instala y carga los paquetes necesarios
 if (!require("shiny")) install.packages("shiny")
 if (!require("shinydashboard")) install.packages("shinydashboard")
+
 library(shiny)
 library(shinydashboard)
-# Incluye los archivos de las aplicaciones Shiny
+
 
 if(!exists("gas_station_data_loaded")){
   source("GasStation_dataset_load.R")
@@ -51,5 +52,3 @@ server <- function(input, output) {
 # Ejecuta la aplicación
 shinyApp(ui = ui, server = server)
 
-
-rm("gas_station_data_loaded")
